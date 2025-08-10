@@ -16,6 +16,8 @@ export default function TodoList() {
 
   console.log("TODOS:", todos);
 
+  
+
   const onLoad = async () => {
     // READ ITEMS FROM STORAGE
     let data = await getData("todos");
