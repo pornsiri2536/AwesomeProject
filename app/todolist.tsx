@@ -1,83 +1,101 @@
-// import TodoItem from "@/components/week9/TodoItem";
-import TodoItem from "@/components/week9/TodoItem";
-import { getData } from "@/utils/storage";
+import { getData, storeData } from "@/utils/storage";
 import { FontAwesome } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { FlatList, TouchableOpacity, View } from "react-native";
-// import { useNavigation } from '@react-navigation/native';
+import { FlatList, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function TodoList() {
-  // const navigation = useNavigation();
-  const [todos, setTodos] = useState<any>([
-    // { id: '1', completed: false, title: "exercise @ 7.00" },
-    // { id: '2', completed: false, title: "meeting @ 9.00" },
-    // { id: '3', completed: false, title: "go to cinema @ 19.00" },
-  ]);
-
-  console.log("TODOS:", todos);
-
-  
+  const [todos, setTodos] = useState<any[]>([]);
 
   const onLoad = async () => {
-    // READ ITEMS FROM STORAGE
     let data = await getData("todos");
-
-    // SET STATE - WRITE CODE HERE
-    
+    if (data) {
+      setTodos(data);
+    }
   };
 
   useEffect(() => {
     onLoad();
   }, []);
 
+  useEffect(() => {
+    storeData("todos", todos);
+  }, [todos]);
+
   const onCreate = () => {
     let new_data = {
-      id: "_" + Math.random().toString(36).substr(2, 9), //RANDOM NUMBER
-      title: "", //Empty String
+      id: "_" + Math.random().toString(36).substr(2, 9),
+      title: "",
       completed: false,
     };
-    //CLONE ARRAY + APPEND NEW DATA INTO ARRAY
-    let t = [...todos, new_data];
-    //UPDATE STATE
-    setTodos(t);
-
-    // WRITE ITEM TO STORAGE - WRITE CODE HERE
-    
+    setTodos([...todos, new_data]);
   };
+
   const onUpdate = (new_title: string, id: string) => {
-    //CLONE ARRAY FIRST
     let t = [...todos];
-    //Find index of specific object using findIndex method.
     let index = t.findIndex((item) => item.id == id);
-    //Update object's name property.
-    console.log("t:", t[index], id);
-    t[index].title = new_title;
-    //UPDATE STATE
-    setTodos(t);
-
-    // WRITE ITEM TO STORAGE - WRITE CODE HERE
-    
+    if (index !== -1) {
+      t[index].title = new_title;
+      setTodos(t);
+    }
   };
+
   const onCheck = (id: string) => {
     let t = [...todos];
     let index = t.findIndex((item) => item.id == id);
-    //SET INVERSE VALUE BOOLEAN
-    t[index].completed = !t[index].completed;
-    setTodos(t);
-
-    // WRITE ITEM TO STORAGE - WRITE CODE HERE
-    
+    if (index !== -1) {
+      t[index].completed = !t[index].completed;
+      setTodos(t);
+    }
   };
+
   const onDelete = (id: string) => {
-    //CLONE ARRAY FIRST
-    let t = [...todos];
-    let index = t.findIndex((item) => item.id == id);
-    let [removed_t] = t.splice(index, 1);
-    console.log(removed_t);
+    let t = todos.filter((item) => item.id !== id);
     setTodos(t);
+  };
 
-    // REMOVE AN ITEM FROM STORAGE - WRITE CODE HERE
+  const TodoItem = ({ item }: any) => {
+    const [text, setText] = useState(item.title);
 
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          padding: 10,
+          backgroundColor: "#fff",
+          borderBottomWidth: 1,
+          borderBottomColor: "#ddd",
+        }}
+      >
+        {/* ปุ่ม Check */}
+        <TouchableOpacity onPress={() => onCheck(item.id)}>
+          <FontAwesome
+            name={item.completed ? "check-square" : "square-o"}
+            size={24}
+            color={item.completed ? "green" : "gray"}
+          />
+        </TouchableOpacity>
+
+        {/* กล่องแก้ไขข้อความ */}
+        <TextInput
+          style={{
+            flex: 1,
+            marginHorizontal: 10,
+            textDecorationLine: item.completed ? "line-through" : "none",
+            color: item.completed ? "gray" : "black",
+          }}
+          value={text}
+          onChangeText={setText}
+          onEndEditing={() => onUpdate(text, item.id)}
+          placeholder="พิมพ์รายการ..."
+        />
+
+        {/* ปุ่มลบ */}
+        <TouchableOpacity onPress={() => onDelete(item.id)}>
+          <FontAwesome name="trash" size={24} color="red" />
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
@@ -86,16 +104,9 @@ export default function TodoList() {
         style={{ marginTop: 15 }}
         data={todos}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          // <Text>{item.title}</Text>
-          <TodoItem
-            item={item}
-            onUpdate={onUpdate}
-            onCheck={onCheck}
-            onDelete={onDelete}
-          />
-        )}
+        renderItem={({ item }) => <TodoItem item={item} />}
       />
+      {/* ปุ่มเพิ่มรายการ */}
       <TouchableOpacity
         style={{
           backgroundColor: "lightblue",
@@ -103,7 +114,7 @@ export default function TodoList() {
           width: 50,
           height: 50,
           alignItems: "center",
-          alignContent: "center",
+          justifyContent: "center",
           borderRadius: 25,
           position: "absolute",
           right: 10,
